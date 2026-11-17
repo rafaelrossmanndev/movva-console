@@ -1,0 +1,136 @@
+@startuml movva
+
+abstract class Veiculo {
+    - id: int
+    - placa: String
+    - marca: String
+    - modelo: String
+    - ano: int
+    - valorDiaria: BigDecimal
+    --
+    {abstract} + calcularDiaria(): BigDecimal
+    + alterarDiariaBase(novoValor: BigDecimal): void
+}
+class Carro {
+    - quantidadePortas: int
+    --
+    + calcularDiaria(): BigDecimal
+}
+class Moto {
+    - cilindradas: int
+    --
+    + calcularDiaria(): BigDecimal
+}
+class CarroEletrico {
+    - autonomiaKm: int
+    --
+    + calcularDiaria(): BigDecimal
+}
+
+class Cliente {
+    - id: int
+    - nome: String
+    - cpf: String
+    - telefone: String
+    --
+    + atualizarTelefone(novoTelefone: String): void
+}
+
+enum StatusLocacao {
+    ATIVA
+    FINALIZADA
+}
+
+class Locacao {
+    - id: int
+    - cliente: Cliente
+    - veiculo: Veiculo
+    - dataRetirada: LocalDate
+    - dataPrevistaDevolucao: LocalDate
+    - dataEfetivaDevolucao: LocalDate
+    - valorDiariaContratada: BigDecimal
+    - valorFinal: BigDecimal
+    - status: StatusLocacao
+    --
+    + estaAtiva(): boolean
+    + calcularDiasPrevistos(): long
+    + finalizar(dataEfetiva: LocalDate): void
+}
+
+class Locadora {
+    - veiculos: List<Veiculo>
+    - clientes: List<Cliente>
+    - locacoes: List<Locacao>
+    - proximoIdVeiculo: int
+    - proximoIdCliente: int
+    - proximoIdLocacao: int
+    --
+    + cadastrarVeiculo(veiculo: Veiculo): void
+    + cadastrarCliente(cliente: Cliente): void
+    + realizarLocacao(cliente: Cliente, veiculo: Veiculo, retirada: LocalDate, previsao: LocalDate): Locacao
+    + registrarDevolucao(locacao: Locacao, dataEfetiva: LocalDate): void
+    + buscarVeiculo(id: int): Veiculo
+    + buscarVeiculo(placa: String): Veiculo
+    + buscarCliente(id: int): Cliente
+    + veiculoDisponivel(veiculo: Veiculo): boolean
+    - cpfJaCadastrado(cpf: String): boolean
+    - placaJaCadastrada(placa: String): boolean
+}
+
+interface Relatorio {
+    + gerar(locadora: Locadora): String
+}
+class RelatorioResumoGeral
+class RelatorioTotalCobrado
+class RelatorioHistoricoCliente {
+    - cliente: Cliente
+}
+class RelatorioLocacoesPorVeiculo
+class RelatorioVeiculosMaisAlugados
+
+interface Persistivel {
+    + salvar(locadora: Locadora): void
+    + carregar(locadora: Locadora): void
+}
+class PersistenciaCSV {
+    - diretorio: String
+    --
+    + salvar(locadora: Locadora): void
+    + carregar(locadora: Locadora): void
+}
+
+class MenuConsole {
+    - locadora: Locadora
+    - persistencia: Persistivel
+    --
+    + iniciar(): void
+    - exibirMenuPrincipal(): void
+}
+
+Veiculo <|-- Carro
+Veiculo <|-- Moto
+Carro <|-- CarroEletrico
+
+Locacao "0..*" -- "1" Cliente
+Locacao "0..*" -- "1" Veiculo
+Locacao "0..*" -- "1" StatusLocacao
+
+Locadora "1" o-- "0..*" Veiculo
+Locadora "1" o-- "0..*" Cliente
+Locadora "1" *-- "0..*" Locacao
+
+MenuConsole "1" -- "1" Locadora
+MenuConsole "1" -- "1" Persistivel
+Persistivel <|.. PersistenciaCSV
+PersistenciaCSV ..> Locadora
+
+Relatorio <|.. RelatorioResumoGeral
+Relatorio <|.. RelatorioTotalCobrado
+Relatorio <|.. RelatorioHistoricoCliente
+Relatorio <|.. RelatorioLocacoesPorVeiculo
+Relatorio <|.. RelatorioVeiculosMaisAlugados
+
+Relatorio ..> Locadora
+RelatorioHistoricoCliente "0..*" -- "1" Cliente
+
+@enduml
