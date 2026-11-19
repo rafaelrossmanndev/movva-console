@@ -1,5 +1,6 @@
 package movva.ui;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -12,6 +13,7 @@ import movva.modelo.Locacao;
 import movva.modelo.Locadora;
 import movva.modelo.Veiculo;
 import movva.modelo.VeiculoFactory;
+import movva.persistencia.Persistivel;
 import movva.relatorio.Relatorio;
 import movva.relatorio.RelatorioHistoricoCliente;
 import movva.relatorio.RelatorioLocacoesPorVeiculo;
@@ -27,10 +29,13 @@ import movva.util.Formatador;
 public class MenuConsole {
 
 	private final Locadora locadora;
+	private final Persistivel persistencia;
 	private final Scanner scanner;
 
-	public MenuConsole(Locadora locadora) {
+	// Injeção de Dependência: o menu recebe a persistência pronta e só conhece a interface.
+	public MenuConsole(Locadora locadora, Persistivel persistencia) {
 		this.locadora = locadora;
+		this.persistencia = persistencia;
 		this.scanner = new Scanner(System.in);
 	}
 
@@ -38,11 +43,14 @@ public class MenuConsole {
 		System.out.println("==========================================");
 		System.out.println("     MOVVA - Locadora de Veículos");
 		System.out.println("==========================================");
+		if (!carregarDados()) {
+			return;
+		}
 		try {
 			int opcao;
 			do {
 				exibirMenuPrincipal();
-				opcao = lerInteiro("Opção: ", 0, 4);
+				opcao = lerInteiro("Opção: ", 0, 5);
 				switch (opcao) {
 				case 1:
 					menuVeiculos();
@@ -56,6 +64,9 @@ public class MenuConsole {
 				case 4:
 					menuRelatorios();
 					break;
+				case 5:
+					salvarDados();
+					break;
 				default:
 					break;
 				}
@@ -63,6 +74,7 @@ public class MenuConsole {
 		} catch (NoSuchElementException e) {
 			// A entrada foi encerrada (ex.: Ctrl+Z no Windows): sai do sistema normalmente.
 		}
+		salvarDados();
 		System.out.println("\nAté logo! Obrigado por usar a Movva.");
 	}
 
@@ -72,7 +84,35 @@ public class MenuConsole {
 		System.out.println("2 - Clientes");
 		System.out.println("3 - Locações");
 		System.out.println("4 - Relatórios");
-		System.out.println("0 - Sair");
+		System.out.println("5 - Salvar dados");
+		System.out.println("0 - Sair (salva automaticamente)");
+	}
+
+	// =====================================================================
+	// PERSISTÊNCIA
+	// =====================================================================
+
+	private boolean carregarDados() {
+		try {
+			persistencia.carregar(locadora);
+			sucesso("Dados carregados: " + locadora.getVeiculos().size() + " veículo(s), "
+					+ locadora.getClientes().size() + " cliente(s), "
+					+ locadora.getLocacoes().size() + " locação(ões).");
+			return true;
+		} catch (IOException e) {
+			erro("Falha ao carregar os dados -> " + e.getMessage());
+			System.out.println("O sistema foi encerrado para não sobrescrever os arquivos. Corrija o CSV e tente de novo.");
+			return false;
+		}
+	}
+
+	private void salvarDados() {
+		try {
+			persistencia.salvar(locadora);
+			sucesso("Dados salvos com sucesso.");
+		} catch (IOException e) {
+			erro("Falha ao salvar os dados -> " + e.getMessage());
+		}
 	}
 
 	// =====================================================================

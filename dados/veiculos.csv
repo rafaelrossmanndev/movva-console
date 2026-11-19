@@ -1,0 +1,8 @@
+tipo;id;placa;marca;modelo;ano;valorDiariaBase;portasOuCilindradas;autonomiaKm
+CARRO;1;ABC1234;Fiat;Argo;2023;150.00;4;0
+CARRO;2;DEF5678;Volkswagen;Up;2021;120.00;2;0
+MOTO;3;GHI1J23;Honda;CG 160;2024;80.00;160;0
+ELETRICO;4;MNO8P90;BYD;Dolphin;2025;150.00;4;400
+CARRO;5;QRS2T45;Chevrolet;Onix;2024;140.00;4;0
+MOTO;6;JKL4567;Yamaha;MT-07;2022;180.00;689;0
+ELETRICO;7;UVW6X78;Renault;Kwid E-Tech;2024;130.00;4;298
