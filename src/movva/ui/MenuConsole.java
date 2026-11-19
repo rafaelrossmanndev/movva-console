@@ -12,6 +12,12 @@ import movva.modelo.Locacao;
 import movva.modelo.Locadora;
 import movva.modelo.Veiculo;
 import movva.modelo.VeiculoFactory;
+import movva.relatorio.Relatorio;
+import movva.relatorio.RelatorioHistoricoCliente;
+import movva.relatorio.RelatorioLocacoesPorVeiculo;
+import movva.relatorio.RelatorioResumoGeral;
+import movva.relatorio.RelatorioTotalCobrado;
+import movva.relatorio.RelatorioVeiculosMaisAlugados;
 import movva.util.Formatador;
 
 /**
@@ -36,7 +42,7 @@ public class MenuConsole {
 			int opcao;
 			do {
 				exibirMenuPrincipal();
-				opcao = lerInteiro("Opção: ", 0, 3);
+				opcao = lerInteiro("Opção: ", 0, 4);
 				switch (opcao) {
 				case 1:
 					menuVeiculos();
@@ -46,6 +52,9 @@ public class MenuConsole {
 					break;
 				case 3:
 					menuLocacoes();
+					break;
+				case 4:
+					menuRelatorios();
 					break;
 				default:
 					break;
@@ -62,6 +71,7 @@ public class MenuConsole {
 		System.out.println("1 - Veículos");
 		System.out.println("2 - Clientes");
 		System.out.println("3 - Locações");
+		System.out.println("4 - Relatórios");
 		System.out.println("0 - Sair");
 	}
 
@@ -320,6 +330,75 @@ public class MenuConsole {
 					+ " dia(s) de atraso, multa de 20% da diária por dia incluída no total.");
 		}
 		System.out.println("Total a pagar: " + Formatador.moeda(locacao.getValorFinal()));
+	}
+
+	// =====================================================================
+	// RELATÓRIOS (Strategy)
+	// =====================================================================
+
+	private void menuRelatorios() {
+		int opcao;
+		do {
+			titulo("RELATÓRIOS");
+			System.out.println("1 - Resumo geral");
+			System.out.println("2 - Total cobrado");
+			System.out.println("3 - Histórico de um cliente");
+			System.out.println("4 - Locações por veículo");
+			System.out.println("5 - Veículos mais alugados");
+			System.out.println("0 - Voltar");
+			opcao = lerInteiro("Opção: ", 0, 5);
+			try {
+				// A variável é do tipo da interface: qualquer estratégia de relatório serve.
+				Relatorio relatorio = null;
+				switch (opcao) {
+				case 1:
+					relatorio = new RelatorioResumoGeral();
+					break;
+				case 2:
+					relatorio = new RelatorioTotalCobrado();
+					break;
+				case 3:
+					relatorio = criarRelatorioHistoricoCliente();
+					break;
+				case 4:
+					relatorio = new RelatorioLocacoesPorVeiculo();
+					break;
+				case 5:
+					relatorio = new RelatorioVeiculosMaisAlugados();
+					break;
+				default:
+					break;
+				}
+				if (relatorio != null) {
+					exibirRelatorio(relatorio);
+				}
+			} catch (IllegalArgumentException | IllegalStateException e) {
+				erro(e.getMessage());
+			}
+			if (opcao != 0) {
+				pausar();
+			}
+		} while (opcao != 0);
+	}
+
+	private Relatorio criarRelatorioHistoricoCliente() {
+		if (locadora.getClientes().isEmpty()) {
+			erro("Nenhum cliente cadastrado.");
+			return null;
+		}
+		listar(locadora.getClientes(), "");
+		Cliente cliente = locadora.buscarCliente(lerInteiro("Id do cliente: "));
+		if (cliente == null) {
+			erro("Cliente não encontrado.");
+			return null;
+		}
+		return new RelatorioHistoricoCliente(cliente);
+	}
+
+	// Não sabe (nem precisa saber) qual relatório concreto está gerando: polimorfismo.
+	private void exibirRelatorio(Relatorio relatorio) {
+		System.out.println();
+		System.out.print(relatorio.gerar(locadora));
 	}
 
 	// =====================================================================
