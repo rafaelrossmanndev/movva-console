@@ -1,136 +1,262 @@
 @startuml movva
 
-abstract class Veiculo {
-    - id: int
-    - placa: String
-    - marca: String
-    - modelo: String
-    - ano: int
-    - valorDiaria: BigDecimal
-    --
-    {abstract} + calcularDiaria(): BigDecimal
-    + alterarDiariaBase(novoValor: BigDecimal): void
-}
-class Carro {
-    - quantidadePortas: int
-    --
-    + calcularDiaria(): BigDecimal
-}
-class Moto {
-    - cilindradas: int
-    --
-    + calcularDiaria(): BigDecimal
-}
-class CarroEletrico {
-    - autonomiaKm: int
-    --
-    + calcularDiaria(): BigDecimal
+title Movva - Locadora de Veículos\nDiagrama de Classes
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty members
+
+' Convenção: getters e construtores triviais foram omitidos para manter o diagrama legível.
+' Visibilidade: + público | - privado | # protegido | ~ pacote
+
+package "movva" {
+    class Main {
+        + {static} main(args: String[]): void
+    }
 }
 
-class Cliente {
-    - id: int
-    - nome: String
-    - cpf: String
-    - telefone: String
-    --
-    + atualizarTelefone(novoTelefone: String): void
+package "movva.ui" {
+    class MenuConsole {
+        - locadora: Locadora
+        - persistencia: Persistivel
+        - scanner: Scanner
+        --
+        + MenuConsole(locadora: Locadora, persistencia: Persistivel)
+        + iniciar(): void
+        - exibirMenuPrincipal(): void
+        - carregarDados(): boolean
+        - salvarDados(): void
+        - exibirRelatorio(relatorio: Relatorio): void
+        - listar(itens: List<?>, mensagemSeVazia: String): void
+        - lerInteiro(rotulo: String): int
+        - lerInteiro(rotulo: String, minimo: int, maximo: int): int
+        - lerData(rotulo: String): LocalDate
+        - lerData(rotulo: String, padrao: LocalDate): LocalDate
+    }
 }
 
-enum StatusLocacao {
-    ATIVA
-    FINALIZADA
+package "movva.modelo" {
+    abstract class Veiculo {
+        - id: int
+        - placa: String
+        - marca: String
+        - modelo: String
+        - ano: int
+        - valorDiaria: BigDecimal
+        --
+        # Veiculo(id: int, placa: String, marca: String, modelo: String, ano: int, valorDiaria: BigDecimal)
+        {abstract} + calcularDiaria(): BigDecimal
+        {abstract} + getTipo(): String
+        + alterarDiariaBase(novoValor: BigDecimal): void
+        ~ atribuirId(id: int): void
+        # {static} arredondar(valor: BigDecimal): BigDecimal
+        + {static} normalizarPlaca(placa: String): String
+        + toString(): String
+    }
+
+    class Carro {
+        - quantidadePortas: int
+        --
+        + Carro(placa, marca, modelo, ano, valorDiaria, quantidadePortas)
+        + Carro(id, placa, marca, modelo, ano, valorDiaria, quantidadePortas)
+        + calcularDiaria(): BigDecimal
+        + getTipo(): String
+        + toString(): String
+    }
+
+    class Moto {
+        - cilindradas: int
+        --
+        + Moto(placa, marca, modelo, ano, valorDiaria, cilindradas)
+        + Moto(id, placa, marca, modelo, ano, valorDiaria, cilindradas)
+        + calcularDiaria(): BigDecimal
+        + getTipo(): String
+        + toString(): String
+    }
+
+    class CarroEletrico {
+        - autonomiaKm: int
+        --
+        + CarroEletrico(placa, marca, modelo, ano, valorDiaria, quantidadePortas, autonomiaKm)
+        + CarroEletrico(id, placa, marca, modelo, ano, valorDiaria, quantidadePortas, autonomiaKm)
+        + calcularDiaria(): BigDecimal
+        + getTipo(): String
+        + toString(): String
+    }
+
+    class VeiculoFactory <<Factory Method>> {
+        + {static} TIPOS: List<String>
+        --
+        + {static} criar(tipo, placa, marca, modelo, ano, valorDiaria, portasOuCilindradas, autonomiaKm): Veiculo
+        + {static} criar(tipo, id, placa, marca, modelo, ano, valorDiaria, portasOuCilindradas, autonomiaKm): Veiculo
+    }
+
+    class Cliente {
+        - id: int
+        - nome: String
+        - cpf: String
+        - telefone: String
+        --
+        + Cliente(nome: String, cpf: String, telefone: String)
+        + Cliente(id: int, nome: String, cpf: String, telefone: String)
+        + atualizarTelefone(novoTelefone: String): void
+        ~ atribuirId(id: int): void
+        + getCpfFormatado(): String
+        + toString(): String
+    }
+
+    enum StatusLocacao {
+        ATIVA
+        FINALIZADA
+    }
+
+    class Locacao {
+        - id: int
+        - cliente: Cliente
+        - veiculo: Veiculo
+        - dataRetirada: LocalDate
+        - dataPrevistaDevolucao: LocalDate
+        - dataEfetivaDevolucao: LocalDate
+        - valorDiariaContratada: BigDecimal
+        - valorFinal: BigDecimal
+        - status: StatusLocacao
+        --
+        ~ Locacao(cliente, veiculo, dataRetirada, dataPrevistaDevolucao)
+        + Locacao(id, cliente, veiculo, dataRetirada, dataPrevistaDevolucao, dataEfetivaDevolucao, valorDiariaContratada, valorFinal, status)
+        + estaAtiva(): boolean
+        + calcularDiasPrevistos(): long
+        + calcularValorPrevisto(): BigDecimal
+        + finalizar(dataEfetiva: LocalDate): void
+        + calcularDiasAtraso(): long
+        ~ atribuirId(id: int): void
+        + toString(): String
+    }
+
+    class Locadora {
+        - veiculos: List<Veiculo>
+        - clientes: List<Cliente>
+        - locacoes: List<Locacao>
+        - proximoIdVeiculo: int
+        - proximoIdCliente: int
+        - proximoIdLocacao: int
+        --
+        + cadastrarVeiculo(veiculo: Veiculo): void
+        + cadastrarCliente(cliente: Cliente): void
+        + realizarLocacao(cliente: Cliente, veiculo: Veiculo, retirada: LocalDate, previsao: LocalDate): Locacao
+        + registrarDevolucao(locacao: Locacao, dataEfetiva: LocalDate): void
+        + restaurarLocacao(locacao: Locacao): void
+        + buscarVeiculo(id: int): Veiculo
+        + buscarVeiculo(placa: String): Veiculo
+        + buscarCliente(id: int): Cliente
+        + buscarLocacao(id: int): Locacao
+        + veiculoDisponivel(veiculo: Veiculo): boolean
+        + getVeiculosDisponiveis(): List<Veiculo>
+        + getLocacoesAtivas(): List<Locacao>
+        - cpfJaCadastrado(cpf: String): boolean
+        - placaJaCadastrada(placa: String): boolean
+    }
 }
 
-class Locacao {
-    - id: int
-    - cliente: Cliente
-    - veiculo: Veiculo
-    - dataRetirada: LocalDate
-    - dataPrevistaDevolucao: LocalDate
-    - dataEfetivaDevolucao: LocalDate
-    - valorDiariaContratada: BigDecimal
-    - valorFinal: BigDecimal
-    - status: StatusLocacao
-    --
-    + estaAtiva(): boolean
-    + calcularDiasPrevistos(): long
-    + finalizar(dataEfetiva: LocalDate): void
+package "movva.relatorio" {
+    interface Relatorio <<Strategy>> {
+        + gerar(locadora: Locadora): String
+    }
+    class RelatorioResumoGeral
+    class RelatorioTotalCobrado
+    class RelatorioHistoricoCliente {
+        - cliente: Cliente
+        --
+        + RelatorioHistoricoCliente(cliente: Cliente)
+    }
+    class RelatorioLocacoesPorVeiculo
+    class RelatorioVeiculosMaisAlugados
 }
 
-class Locadora {
-    - veiculos: List<Veiculo>
-    - clientes: List<Cliente>
-    - locacoes: List<Locacao>
-    - proximoIdVeiculo: int
-    - proximoIdCliente: int
-    - proximoIdLocacao: int
-    --
-    + cadastrarVeiculo(veiculo: Veiculo): void
-    + cadastrarCliente(cliente: Cliente): void
-    + realizarLocacao(cliente: Cliente, veiculo: Veiculo, retirada: LocalDate, previsao: LocalDate): Locacao
-    + registrarDevolucao(locacao: Locacao, dataEfetiva: LocalDate): void
-    + buscarVeiculo(id: int): Veiculo
-    + buscarVeiculo(placa: String): Veiculo
-    + buscarCliente(id: int): Cliente
-    + veiculoDisponivel(veiculo: Veiculo): boolean
-    - cpfJaCadastrado(cpf: String): boolean
-    - placaJaCadastrada(placa: String): boolean
+package "movva.persistencia" {
+    interface Persistivel {
+        + salvar(locadora: Locadora): void
+        + carregar(locadora: Locadora): void
+    }
+    class PersistenciaCSV {
+        - diretorio: String
+        --
+        + PersistenciaCSV(diretorio: String)
+        + salvar(locadora: Locadora): void
+        + carregar(locadora: Locadora): void
+    }
 }
 
-interface Relatorio {
-    + gerar(locadora: Locadora): String
-}
-class RelatorioResumoGeral
-class RelatorioTotalCobrado
-class RelatorioHistoricoCliente {
-    - cliente: Cliente
-}
-class RelatorioLocacoesPorVeiculo
-class RelatorioVeiculosMaisAlugados
-
-interface Persistivel {
-    + salvar(locadora: Locadora): void
-    + carregar(locadora: Locadora): void
-}
-class PersistenciaCSV {
-    - diretorio: String
-    --
-    + salvar(locadora: Locadora): void
-    + carregar(locadora: Locadora): void
+package "movva.util" {
+    class Formatador {
+        + {static} FORMATO_DATA: DateTimeFormatter
+        + {static} moeda(valor: BigDecimal): String
+        + {static} data(data: LocalDate): String
+    }
 }
 
-class MenuConsole {
-    - locadora: Locadora
-    - persistencia: Persistivel
-    --
-    + iniciar(): void
-    - exibirMenuPrincipal(): void
-}
-
+' ---------------- Herança (generalização) ----------------
 Veiculo <|-- Carro
 Veiculo <|-- Moto
 Carro <|-- CarroEletrico
 
-Locacao "0..*" -- "1" Cliente
-Locacao "0..*" -- "1" Veiculo
-Locacao "0..*" -- "1" StatusLocacao
+' ---------------- Associações ----------------
+Locacao "0..*" --> "1" Cliente
+Locacao "0..*" --> "1" Veiculo
+Locacao "0..*" --> "1" StatusLocacao
+RelatorioHistoricoCliente "0..*" --> "1" Cliente
 
+' ---------------- Agregação e composição ----------------
 Locadora "1" o-- "0..*" Veiculo
 Locadora "1" o-- "0..*" Cliente
 Locadora "1" *-- "0..*" Locacao
 
-MenuConsole "1" -- "1" Locadora
-MenuConsole "1" -- "1" Persistivel
-Persistivel <|.. PersistenciaCSV
-PersistenciaCSV ..> Locadora
-
+' ---------------- Interface (realização) ----------------
 Relatorio <|.. RelatorioResumoGeral
 Relatorio <|.. RelatorioTotalCobrado
 Relatorio <|.. RelatorioHistoricoCliente
 Relatorio <|.. RelatorioLocacoesPorVeiculo
 Relatorio <|.. RelatorioVeiculosMaisAlugados
+Persistivel <|.. PersistenciaCSV
 
+' ---------------- UI ----------------
+MenuConsole "1" --> "1" Locadora
+MenuConsole "1" --> "1" Persistivel
+MenuConsole ..> Relatorio : <<usa>>
+MenuConsole ..> VeiculoFactory : <<usa>>
+
+' ---------------- Dependências ----------------
+VeiculoFactory ..> Carro : <<cria>>
+VeiculoFactory ..> Moto : <<cria>>
+VeiculoFactory ..> CarroEletrico : <<cria>>
+PersistenciaCSV ..> Locadora
+PersistenciaCSV ..> VeiculoFactory : <<usa>>
 Relatorio ..> Locadora
-RelatorioHistoricoCliente "0..*" -- "1" Cliente
+Main ..> MenuConsole : <<cria>>
+Main ..> PersistenciaCSV : <<cria e injeta>>
+Main ..> Locadora : <<cria>>
+
+' ---------------- Padrões de projeto ----------------
+note right of VeiculoFactory
+  <b>Factory Method</b>
+  Devolve Carro, Moto ou CarroEletrico
+  conforme o "tipo" recebido (menu ou CSV).
+end note
+
+note bottom of Relatorio
+  <b>Strategy</b>
+  Cada relatório é um algoritmo
+  intercambiável escolhido em tempo de execução.
+end note
+
+note left of MenuConsole
+  <b>Injeção de Dependência</b>
+  Recebe um Persistivel pronto pelo construtor
+  (o Main decide que é PersistenciaCSV).
+end note
+
+note bottom of Formatador
+  Utilitário usado pelo modelo,
+  pelos relatórios e pelo menu.
+end note
 
 @enduml
