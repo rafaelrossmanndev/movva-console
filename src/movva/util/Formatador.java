@@ -3,13 +3,16 @@ package movva.util;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 import java.util.Locale;
 
 // Classe utilitária: concentra a formatação de valores e datas exibidos no console.
 public final class Formatador {
 
 	private static final Locale PT_BR = Locale.forLanguageTag("pt-BR");
-	public static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+	// STRICT: recusa datas impossíveis como 31/02 (em vez de "ajustar" para 28/02).
+	public static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd/MM/uuuu")
+			.withResolverStyle(ResolverStyle.STRICT);
 
 	private Formatador() {
 		// não deve ser instanciada
